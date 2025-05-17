@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+ <html>
+ <head>
+  <title>Simplified Battle Cats</title>
+  <style>
+  body {
+  font-family: sans-serif; /* Fallback font */
+  margin: 0;
+  padding: 0;
+  background-color: #f0f0f0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  }
+
+  .menu {
+  background-color: #fff;
+  padding: 30px;
+  border-radius: 8px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+  text-align: center;
+  }
+
+  .menu button {
+  padding: 0;
+  margin: 10px;
+  cursor: pointer;
+  border: none;
+  border-radius: 8px;
+  background: none;
+  }
+
+  .menu button img {
+  display: block;
+  width: 150px;
+  height: auto;
+  }
+
+  .menu button:hover {
+  opacity: 0.8;
+  }
+
+  #game-container {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  }
+
+  #battlefield {
+  width: 600px;
+  height: 300px;
+  border: 1px solid black;
+  position: relative;
+  overflow: hidden;
+  background-image: url('[suspicious link removed]');
+  background-size: cover;
+  background-repeat: no-repeat;
+  margin-bottom: 10px;
+  }
+
+  #player-base, #enemy-base {
+  width: 50px;
+  height: 50px;
+  background-color: lightblue;
+  position: absolute;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  }
+
+  #player-base {
+  left: 10px;
+  bottom: 10px;
+  }
+
+  #enemy-base {
+  right: 10px;
+  top: 10px;
+  }
+
+  .cat {
+  width: 48px;
+  height: 48px;
+  position: absolute;
+  background-image: url('cat_spritesheet.png');
+  background-repeat: no-repeat;
+  overflow: hidden;
+  }
+
+  .enemy {
+  width: 64px;
+  height: 64px;
+  position: absolute;
+  background-image: url('enemy_spritesheet.png');
+  background-repeat: no-repeat;
+  overflow: hidden;
+  }
+
+  #ui {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 10px;
+  background-color: rgba(0, 0, 0, 0.5);
+  color: white; /* Fallback color */
+  }
+
+  .game-text {
+  width: 16px; /* Width of each character sprite */
+  height: 16px; /* Height of each character sprite */
+  background-image: url('font_spritesheet.png'); /* Replace with your font sprite sheet URL */
+  background-repeat: no-repeat;
+  display: inline-block;
+  }
+
+  #resource-display {
+  /* We will now render the text using game-text spans */
+  }
+
+  .deploy-button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 80px;
+  height: 80px;
+  background-color: #333;
+  color: white; /* Fallback color */
+  border: none;
+  cursor: pointer;
+  border-radius: 5px;
+  font-size: 12px; /* Fallback font size */
+  }
+
+  .deploy-button img {
+  width: 48px;
+  height: 48px;
+  margin-bottom: 5px;
+  }
+
+  .deploy-button span { /* For the "Cost: 50" text */
+  font-size: 10px; /* Fallback font size */
+  }
+
+  #level-select-menu {
+  display: none;
+  background-color: #fff;
+  padding: 30px;
+  border-radius: 8px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+  text-align: center;
+  }
+
+  #level-select-menu button {
+  padding: 0;
+  margin: 10px;
+  cursor: pointer;
+  border: none;
+  background: none;
+  border-radius: 8px;
+  }
+
+  #level-select-menu button img {
+  display: block;
+  width: 150px;
+  height: auto;
+  }
+  </style>
+ </head>
+ <body>
+  <div class="menu" id="main-menu">
+  <button id="play-button"><img src="play\_button\_image.png" alt="Play"></button>
+  <button id="settings-button"><img src="settings\_button\_image.png" alt="Settings"></button>
+  </div>
+
+  <div class="menu" id="level-select-menu">
+  <button id="mission-1-button"><img src="mission\_1\_button\_image.png" alt="Mission 1"></button>
+  <button id="event-button"><img src="event\_button\_image.png" alt="Event"></button>
+  </div>
+
+  <div id="game-container">
+  <div id="battlefield">
+  <div id="player-base">P Base</div>
+  <div id="enemy-base">E Base</div>
+  </div>
+  <div id="ui">
+  <div id="resource-display"></div> <button id="deploy-cat-button" class="deploy-button">
+  <img src="basic\_cat\_icon.png" alt="Deploy Cat">
+  <span class="game-text">C</span><span class="game-text">o</span><span class="game-text">s</span><span class="game-text">t</span><span class="game-text">:</span>
+  <span class="game-text">5</span><span class="game-text">0</span>
+  </button>
+  </div>
+  </div>
+
+  <script>
+  const mainMenu = document.getElementById('main-menu');
+  const playButton = document.getElementById('play-button');
+  const settingsButton = document.getElementById('settings-button');
+  const levelSelectMenu = document.getElementById('level-select-menu');
+  const mission1Button = document.getElementById('mission-1-button');
+  const eventButton = document.getElementById('event-button');
+  const gameContainer = document.getElementById('game-container');
+  const battlefield = document.getElementById('battlefield');
+  const resourceDisplay = document.getElementById('resource-display');
+  const deployCatButton = document.getElementById('deploy-cat-button');
+  const playerBase = document.getElementById('player-base');
+  const enemyBase = document.getElementById('enemy-base');
+
+  let resources = 100;
+  let catCounter = 0;
+  let enemyCounter = 0;
+  let gameActive = false;
+  let resourceInterval;
+
+  // Font sprite sheet properties
+  const charWidth = 16;
+  const charHeight = 16;
+  const charsPerRow = 10; // Adjust based on your sprite sheet layout
+  const charMap = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789:"; // Order of characters in your sprite sheet
+
+  // Cat animation properties
+  const catFrameWidth = 48;
+  const catFrameHeight = 48;
+  const catFrames = 4;
+  const catAnimationSpeed = 150;
+
+  // Enemy animation properties
+  const enemyFrameWidth = 64;
+  const enemyFrameHeight = 64;
+  const enemyFrames = 6;
+  const enemyAnimationSpeed = 200;
+
+  function renderText(text, parentElement) {
+  parentElement.innerHTML = ''; // Clear existing content
+  text = text.toUpperCase();
+  for (let i = 0; i < text.length; i++) {
+  const char = text[i];
+  const index = charMap.indexOf(char);
+  if (index !== -1) {
+  const charX = (index % charsPerRow) * charWidth;
+  const charY = Math.floor(index / charsPerRow) * charHeight;
+  const span = document.createElement('span');
+  span.classList.add('game-text');
+  span.style.backgroundPosition = `-${charX}px -${charY}px`;
+  parentElement.appendChild(span);
+  } else {
+  // Handle characters not in the sprite sheet (e.g., space)
+  const span = document.createElement('span');
+  span.innerHTML = '&nbsp;'; // Add a space
+  parentElement.appendChild(span);
+  }
+  }
+  }
+
+  function updateResources(amount) {
+  resources += amount;
+  renderText(`RESOURCES:${resources}`, resourceDisplay);
+  }
+
+  function deployCat() {
+  if (!gameActive) return;
+  const catCost = 50;
+  if (resources >= catCost) {
+  const newCat = document.createElement('div');
+  newCat.classList.add('cat');
+  newCat.id = `cat-${catCounter++}`;
+  newCat.style.left = '60px';
+  newCat.style.bottom = '20px';
+  battlefield.appendChild(newCat);
+  updateResources(-catCost);
+  animateUnit(newCat, catFrameWidth, catFrames, catAnimationSpeed);
+  moveUnit(newCat, 1);
+  } else {
+  alert('Not enough resources!');
+  }
+  }
+
+  function animateUnit(unitElement, frameWidth, totalFrames, speed) {
+  let currentFrame = 0;
+  setInterval(() => {
+  unitElement.style.backgroundPosition = `-${currentFrame * frameWidth}px 0px`;
+  currentFrame = (currentFrame + 1) % totalFrames;
+  }, speed);
+  }
+
+  function spawnEnemy() {
+  if (!gameActive) return;
+  const newEnemy = document.createElement('div');
+  newEnemy.classList.add('enemy');
+  newEnemy.id = `enemy-${enemyCounter++}`;
+  newEnemy.style.right = '60px';
+  newEnemy.style.top = '20px';
+  battlefield.appendChild(newEnemy);
+  animateUnit(newEnemy, enemyFrameWidth, enemyFrames, enemyAnimationSpeed);
+  moveUnit(newEnemy, -0.75);
+  }
+
+  function moveUnit(unit, speed) {
+  let position = parseInt(unit.style.left || unit.style.right || 0);
+  const unitWidth = unit.offsetWidth;
+  const interval = setInterval(() => {
+  if (!gameActive) {
+  clearInterval(interval);
+  return;
+  }
+  position += speed;
+  if (speed > 0) {
+  unit.style.left = `${position}px`;
+  if (position > parseInt(enemyBase.style.left) - unitWidth / 2) {
+  clearInterval(interval);
+  endGame('Enemy base reached by a cat! You Win (in this very basic simulation)!');
+  }
+  } else {
+  unit.style.right = `${battlefield.offsetWidth - position - unitWidth}px`;
+  if (battlefield.offsetWidth - position - unitWidth < parseInt(playerBase.style.right) + unitWidth / 2) {
+  clearInterval(interval);
+  endGame('Player base reached by an enemy! You Lose (in this very basic simulation)!');
+  }
+  }, 50);
+  }
+
+  function endGame(message) {
+  gameActive = false;
+  alert(message);
+  if (resourceInterval) {
+  clearInterval(resourceInterval);
+  }
+  }
+
+  function showLevelSelect() {
+  mainMenu.style.display = 'none';
+  levelSelectMenu.style.display = 'flex';
+  }
+
+  function startGame() {
+  levelSelectMenu.style.display = 'none';
+  gameContainer.style.display = 'flex';
+  gameActive = true;
+  // Start spawning enemies and increasing resources when the game starts
+  setTimeout(spawnEnemy, 2000);
+  setTimeout(spawnEnemy, 5000);
+  setTimeout(spawnEnemy, 8000);
+  resourceInterval = setInterval(() => { if (gameActive) updateResources(5); }, 1000);
+  updateResources(resources); // Initial render of resources
+  }
+
+  playButton.addEventListener('click', showLevelSelect);
+
+  settingsButton.addEventListener('click', () => {
+  alert('Settings will be implemented here!');
+  });
+
+  mission1Button.addEventListener('click', startGame);
+  eventButton.addEventListener('click', startGame);
+
+  deployCatButton.addEventListener('click', deployCat);
+  </script>
+ </body>
+ </html>
